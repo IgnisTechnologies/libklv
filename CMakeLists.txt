@@ -21,7 +21,6 @@ include_directories(include)
 
 # SOURCES
 #Can manually add the sources using the set command as follows:
-#set(SOURCES src/mainapp.cpp src/Student.cpp)
 file(GLOB SOURCES "src/*.cpp")
 
 add_library(klv SHARED ${SOURCES})
