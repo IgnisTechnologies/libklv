@@ -8,7 +8,17 @@
 
 #include "KlvParser.hpp"
 #include <algorithm>
-#include <stdio.h>
+#ifdef KLV_DEBUG
+#include <iostream>
+#endif
+
+#ifdef KLV_DEBUG
+#define KLV_DEBUG_LOG(...) do { \
+    std::cout << "KlvParser.cpp " << __VA_ARGS__ << std::endl; \
+} while(0)
+#else
+#define KLV_DEBUG_LOG(...) do { } while(0)
+#endif
 
 /**
  * Constructs a new KLV parser. Since keys can be encoded using different methods, 
@@ -44,7 +54,7 @@ KlvParser::~KlvParser() {
  */
 KLV* KlvParser::parseByte(uint8_t byte) {
     ctr++;
-    printf("PARSING BYTE %ld : %x\n", ctr, byte);
+    KLV_DEBUG_LOG("PARSING BYTE " << ctr << " : " << std::hex << static_cast<int>(byte) << std::dec);
     switch(state) {
     case STATE_INIT: {       // init state
         // keep parsing until last 16 bytes match with KLV universal key
@@ -57,20 +67,20 @@ KLV* KlvParser::parseByte(uint8_t byte) {
         switch(key_encodings[0]) {
         case KEY_ENCODING_1_BYTE: {
             state = STATE_KEY;
-            printf("KlvParser transitioning to STATE_KEY\n");
+            KLV_DEBUG_LOG("KlvParser transitioning to STATE_KEY");
             break;
         }
         case KEY_ENCODING_2_BYTE: {
             if(key.size() == 2) {
                 state = STATE_KEY;
-                printf("KlvParser transitioning to STATE_KEY\n");
+                KLV_DEBUG_LOG("KlvParser transitioning to STATE_KEY");
             }
             break;
         }
         case KEY_ENCODING_4_BYTE: {
-            if(key.size() == 4) { 
+            if(key.size() == 4) {
                 state = STATE_KEY;
-                printf("KlvParser transitioning to STATE_KEY\n");
+                KLV_DEBUG_LOG("KlvParser transitioning to STATE_KEY");
             }
             break;
         }
@@ -81,7 +91,7 @@ KLV* KlvParser::parseByte(uint8_t byte) {
             if(checkIfContainsKlvKey(key)) {
                 // found the 4-byte KLV universal key header at beginning
                 state = STATE_KEY;
-                printf("KlvParser transitioning to STATE_KEY\n");
+                KLV_DEBUG_LOG("KlvParser transitioning to STATE_KEY");
             }
             break;
         }
@@ -90,7 +100,7 @@ KLV* KlvParser::parseByte(uint8_t byte) {
             // TODO: the KLV class actually should have a human-readable tag due to this encoding technique
             if(!(byte & 0b10000000)) {
                 state = STATE_KEY;
-                printf("KlvParser transitioning to STATE_KEY\n");
+                KLV_DEBUG_LOG("KlvParser transitioning to STATE_KEY");
             }
             break;
         }
@@ -111,15 +121,15 @@ KLV* KlvParser::parseByte(uint8_t byte) {
             state = STATE_LEN_HEADER;
             ber_len = byte & 0b01111111;
             val_len = 0;
-            printf("BER-Len field is long-form\n");
-            printf("BER len: %ld\n", ber_len);
-            printf("KlvParser transitioning to STATE_LEN_HEADER\n");
+            KLV_DEBUG_LOG("BER-Len field is long-form");
+            KLV_DEBUG_LOG("BER len: " << ber_len);
+            KLV_DEBUG_LOG("KlvParser transitioning to STATE_LEN_HEADER");
         } else {
             state = STATE_LEN;
             val_len = byte & 0b01111111;
-            printf("BER-Len field is short-form\n");
-            printf("Value length: %ld\n", val_len);
-            printf("KlvParser transitioning to STATE_LEN\n");
+            KLV_DEBUG_LOG("BER-Len field is short-form");
+            KLV_DEBUG_LOG("Value length: " << val_len);
+            KLV_DEBUG_LOG("KlvParser transitioning to STATE_LEN");
         }
         break;
     }
@@ -132,8 +142,8 @@ KLV* KlvParser::parseByte(uint8_t byte) {
         num_ber_len_bytes_read++;
         if(num_ber_len_bytes_read == ber_len) {
             state = STATE_LEN;
-            printf("Value length: %ld\n", val_len);
-            printf("KlvParser transitioning to STATE_LEN\n");
+            KLV_DEBUG_LOG("Value length: " << val_len);
+            KLV_DEBUG_LOG("KlvParser transitioning to STATE_LEN");
         }
         break;
     }
@@ -143,7 +153,7 @@ KLV* KlvParser::parseByte(uint8_t byte) {
         val.push_back(byte);
         if(val.size() == val_len) {
             state = STATE_VALUE;
-            printf("KlvParser transitioning to STATE_VALUE\n");
+            KLV_DEBUG_LOG("KlvParser transitioning to STATE_VALUE");
         } else {
             break;
         }
@@ -171,10 +181,10 @@ KLV* KlvParser::parseByte(uint8_t byte) {
         // check if last 16 bytes are KLV key
         // if so then create a sub_klv_parser and then start parsing using those 16 bytes then the next bytes coming in
 
-        printf("key_encodings.size() : %ld\n", key_encodings.size());
+        KLV_DEBUG_LOG("key_encodings.size() : " << key_encodings.size());
         // key_encodings.erase(key_encodings.begin());
         if(key_encodings.size() > 1) {
-            printf("Creating sub_klv_parser...\n");
+            KLV_DEBUG_LOG("Creating sub_klv_parser...");
             KlvParser sub_klv_parser(std::vector<KeyEncoding>(key_encodings.begin()+1, key_encodings.end()));
             std::vector<KLV*> sub_klvs;
             KLV* sub_klv = NULL;
@@ -184,7 +194,7 @@ KLV* KlvParser::parseByte(uint8_t byte) {
             for(i = 0; i < val.size(); i++) {
                 sub_klv = sub_klv_parser.parseByte(val[i]);
                 if(sub_klv != NULL) {
-                    printf("new sub KLV\n");
+                    KLV_DEBUG_LOG("new sub KLV");
                     sub_klvs.push_back(sub_klv);
                     sub_klv = NULL;
                 }

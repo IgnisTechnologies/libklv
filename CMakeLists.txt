@@ -1,9 +1,9 @@
 # CMAkeLists.txt file for mumpi project
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5.0...4.1.1)
 
 # Options. Turn on with 'cmake -Dvarname=ON'.
 option(test "Build all tests." OFF) # makes boolean 'test' available
-# set(CMAKE_BUILD_TYPE Debug)
+option(KLVParserDebug "Enable debug logging in KlvParser." OFF) # makes boolean 'KLV_DEBUG' available
 
 # Project
 project(klv)
@@ -24,6 +24,11 @@ include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 
 add_library(klv SHARED ${SOURCES})
+
+# Conditional compilation definitions
+if(KLVParserDebug)
+    target_compile_definitions(klv PUBLIC KLV_DEBUG)
+endif()
 
 # LINKING
 # target_link_libraries(libklv z) # zlib
