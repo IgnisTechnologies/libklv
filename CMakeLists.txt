@@ -1,21 +1,21 @@
 # CMAkeLists.txt file for mumpi project
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5)
 
 # Options. Turn on with 'cmake -Dvarname=ON'.
 option(test "Build all tests." OFF) # makes boolean 'test' available
-set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Debug)
 
 # Project
 project(klv)
 
 # Compiler settings
-if (CMAKE_VERSION VERSION_LESS "3.1")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
-    endif ()
-  else ()
-    set (CMAKE_CXX_STANDARD 11)
-endif ()
+# if (CMAKE_VERSION VERSION_LESS "3.1")
+#     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#       set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+#     endif ()
+#   else ()
+#     set (CMAKE_CXX_STANDARD 11)
+# endif ()
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Check for packages
@@ -41,11 +41,13 @@ target_link_libraries(klv ${LOG4CPP_LIBRARIES})
 # TESTING
 # TESTING
 
-enable_testing()
-add_subdirectory("${PROJECT_SOURCE_DIR}/deps/googletest")
+if (test)
+  enable_testing()
+  add_subdirectory("${PROJECT_SOURCE_DIR}/deps/googletest")
 
-file(GLOB TESTS "test/*.cpp")
+  file(GLOB TESTS "test/*.cpp")
 
-add_executable(runUnitTests ${TESTS})
-target_link_libraries(runUnitTests gtest gtest_main gmock klv)
-add_test(NAME libklv-test COMMAND runUnitTests)
+  add_executable(runUnitTests ${TESTS})
+  target_link_libraries(runUnitTests gtest gtest_main gmock klv)
+  add_test(NAME libklv-test COMMAND runUnitTests)
+endif()
