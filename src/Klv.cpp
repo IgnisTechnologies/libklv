@@ -1,5 +1,6 @@
 #include "Klv.h"
 #include <string>
+#include <stdexcept>
 
 /**
  * @brief Convinience constructor to create a KLV object with a specified universal key
