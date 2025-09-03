@@ -76,9 +76,9 @@ KLV::KLV(const std::vector<uint8_t> key, const std::vector<uint8_t> len, const s
 
         // iterate through the len vector for that many bytes
         this->len = len[1];
-        for(int i = 1; i < ber_len; i++) {
+        for(int i = 2; i <= ber_len; i++) {
             this->len <<= 8;
-            this->len |= len[2+i];
+            this->len |= len[i];
         }
 
     } else {
