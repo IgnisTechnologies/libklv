@@ -200,24 +200,34 @@ KLV* KlvParser::parseByte(uint8_t byte) {
                 }
             }
 
-            // assign child of THIS klv to the first child in the vector
-            klv->setChild(sub_klvs[0]);
+            // assign child of THIS klv to the first child in the vector (if any)
+            if (!sub_klvs.empty()) {
+                klv->setChild(sub_klvs[0]);
 
-            // assign the next and previous sibling fields and the parent field in each of the sub_klvs
-            for(i = 0; i < sub_klvs.size(); i++) {
-                if(sub_klvs.size() > 1) {
-                    if(i == 0) {
-                        // beginning
-                        sub_klvs[i]->setNextSibling(sub_klvs[i+1]);
-                    } else if(i == sub_klvs.size()) {
-                        // end
-                        sub_klvs[i]->setPreviousSibling(sub_klvs[i-1]);
-                    } else {
-                        sub_klvs[i]->setNextSibling(sub_klvs[i+1]);
-                        sub_klvs[i]->setPreviousSibling(sub_klvs[i-1]);
+                // assign the next and previous sibling fields and the parent field in each of the sub_klvs
+                for(i = 0; i < sub_klvs.size(); i++) {
+                    // Set parent for all sub-KLVs
+                    sub_klvs[i]->setParent(klv);
+
+                    // Set siblings (only if we have more than one element)
+                    if(sub_klvs.size() > 1) {
+                        if(i == 0) {
+                            // First element - set next sibling if it exists
+                            if (i + 1 < sub_klvs.size()) {
+                                sub_klvs[i]->setNextSibling(sub_klvs[i+1]);
+                            }
+                        } else if(i == sub_klvs.size() - 1) {
+                            // Last element - set previous sibling
+                            sub_klvs[i]->setPreviousSibling(sub_klvs[i-1]);
+                        } else {
+                            // Middle elements - set both next and previous siblings
+                            if (i + 1 < sub_klvs.size()) {
+                                sub_klvs[i]->setNextSibling(sub_klvs[i+1]);
+                            }
+                            sub_klvs[i]->setPreviousSibling(sub_klvs[i-1]);
+                        }
                     }
                 }
-                sub_klvs[i]->setParent(klv);
             }
         }
         

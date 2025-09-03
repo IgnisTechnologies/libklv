@@ -1,6 +1,4 @@
 #include "Klv.h"
-#include <iostream>
-#include <algorithm>
 #include <string>
 
 /**
@@ -14,12 +12,33 @@ KLV::KLV(const std::vector<uint8_t> key, const std::vector<uint8_t> val) {
     this->key = key;
     this->value = val;
 
-    // TODO: calc BER encoded length and store it in lenEncoded field
+    // Initialize BER encoding for the value length
+    if (val.size() < 128) {
+        // Short form
+        this->len_encoded = {static_cast<uint8_t>(val.size())};
+        this->len = val.size();
+        this->ber_len = 1;
+    } else {
+        // Long form - calculate minimum bytes needed for length
+        uint32_t length = val.size();
+        int bytes_needed = 1;
+        if (length > 0xFF) bytes_needed++;
+        if (length > 0xFFFF) bytes_needed++;
+        if (length > 0xFFFFFF) bytes_needed++;
 
+        this->len_encoded.push_back(0x80 | bytes_needed);
+        for (int i = bytes_needed - 1; i >= 0; i--) {
+            this->len_encoded.push_back(static_cast<uint8_t>((length >> (i * 8)) & 0xFF));
+        }
+        this->len = length;
+        this->ber_len = 1 + bytes_needed;
+    }
 
-
-    // TODO: figure out BER length
-    // TODO: figure out human-readable len
+    // Initialize tree pointers
+    this->parent = NULL;
+    this->child = NULL;
+    this->next_sibling = NULL;
+    this->previous_sibling = NULL;
 }
 
 /**
@@ -132,11 +151,18 @@ std::unordered_map<std::vector<uint8_t>, KLV> KLV::indexToMap() {
 }
 
 void KLV::addToMap(std::unordered_map<std::vector<uint8_t>, KLV> &map) {
-    map[getKey()] = *this;
+    // Only add to map if we have a valid key
+    if (!key.empty()) {
+        map[getKey()] = *this;
+    }
 
     // recursive depth-first add to map
     KLV* node = child;
     while(node != NULL) {
+        // Safety check to prevent infinite recursion or null pointer crashes
+        if (node == this) {
+            break;  // Prevent self-reference
+        }
         node->addToMap(map);
         node = node->getNext();
     }
